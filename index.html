@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReadyPower Timesheet Assistant</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #d32f2f;
+            --primary-dark: #b71c1c;
+            --bg: #f4f6f8;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --border: #cccccc;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .app-container {
+            max-width: 600px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+            box-sizing: border-box;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin: 0;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 8px;
+            flex: 1;
+        }
+
+        .employment-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .employment-selector label {
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        .employment-selector select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            background-color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .meta-fields {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+            color: #555;
+        }
+
+        .form-group input, .form-group textarea {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .live-stats {
+            background: #eef2f7;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: grid;
+            gap: 8px;
+            border-left: 5px solid #1976d2;
+            text-align: center;
+        }
+
+        .live-stats.fulltime {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .live-stats.contractor {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .stat-val {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #1976d2;
+            margin-top: 2px;
+        }
+
+        .days-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .day-row {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .day-header {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+        }
+
+        .day-inputs-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .day-inputs-grid.contractor {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .input-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .input-wrapper label {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .input-wrapper.holiday-fulltime label {
+            color: #2e7d32;
+        }
+
+        .day-row input[type="time"],
+        .day-row input[type="text"],
+        .day-row input[type="number"],
+        .day-row select {
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            width: 100%;
+            background-color: #fff;
+        }
+
+        .day-row select.holiday-fulltime {
+            color: #2e7d32;
+            font-weight: 600;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 8px 0;
+        }
+
+        .checkbox-group input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .receipt-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+        }
+
+        .receipt-button {
+            background-color: #43a047;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .receipt-button:hover {
+            background-color: #388e3c;
+        }
+
+        .receipt-thumbnail {
+            margin-top: 8px;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #f0f0f0;
+            padding: 4px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .receipt-thumbnail img {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 4px;
+            display: block;
+            object-fit: contain;
+        }
+
+        .receipt-info {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 6px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .remove-receipt {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 6px;
+            width: 100%;
+        }
+
+        .remove-receipt:hover {
+            background-color: #d32f2f;
+        }
+
+        #receiptInput {
+            display: none;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: #607d8b;
+        }
+
+        .mileage-hidden {
+            display: none !important;
+        }
+
+        .holiday-hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="header-section">
+            <h1>⚡ ReadyPower Timesheet</h1>
+            <div class="employment-selector">
+                <label>Type:</label>
+                <select id="employment-type" onchange="switchEmploymentType()">
+                    <option value="fulltime">Full-Time</option>
+                    <option value="contractor">0-Hour Contractor</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="meta-fields">
+            <div class="form-group">
+                <label id="name-label">Driver's Name</label>
+                <input type="text" id="input-name" value="Ashley Fensom" oninput="calculateTimesheet()">
+            </div>
+            <div class="form-group">
+                <label>Week Ending Sunday Date</label>
+                <input type="date" id="input-date" onchange="calculateTimesheet()">
+            </div>
+        </div>
+
+        <div class="live-stats fulltime" id="live-stats">
+            <div class="stat-box">
+                <div class="stat-label">Hours Worked</div>
+                <div class="stat-val" id="stat-worked">0</div>
+            </div>
+            <div class="stat-box" id="standdown-box">
+                <div class="stat-label">Stand Down</div>
+                <div class="stat-val" id="stat-standdown" style="color: #d32f2f;">40</div>
+            </div>
+            <div class="stat-box" id="total-box">
+                <div class="stat-label">Total Hours</div>
+                <div class="stat-val" id="stat-total" style="color: #2e7d32;">40</div>
+            </div>
+            <div class="stat-box" id="expenses-box" style="display: none;">
+                <div class="stat-label">Total Expenses</div>
+                <div class="stat-val" id="stat-expenses" style="color: #2e7d32;">£0.00</div>
+            </div>
+            <div class="stat-box" id="mileage-box" style="display: none;">
+                <div class="stat-label">Total Mileage</div>
+                <div class="stat-val" id="stat-mileage" style="color: #2e7d32;">0 mi</div>
+            </div>
+        </div>
+
+        <div class="days-grid" id="days-input-wrapper">
+            <!-- Populated dynamically via JS -->
+        </div>
+
+        <div class="meta-fields">
+            <div class="form-group">
+                <label>Additional Custom Notes</label>
+                <textarea id="input-manual-notes" rows="3" placeholder="Type any extra notes here..." oninput="calculateTimesheet()"></textarea>
+            </div>
+        </div>
+
+        <div class="btn-container">
+            <button class="btn btn-secondary" onclick="clearForm()">Reset</button>
+            <button class="btn" onclick="saveAsPDF()">Save PDF</button>
+        </div>
+    </div>
+
+    <input type="file" id="receiptInput" accept="image/*">
+
+    <!-- ENGINE -->
+    <script>
+        const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+        let currentEmploymentType = "fulltime";
+        let dayReceipts = {}; // Store receipts for each day
+
+        document.addEventListener("DOMContentLoaded", () => {
+            let daysHTML = "";
+            daysOfWeek.forEach(d => {
+                dayReceipts[d] = [];
+                daysHTML += `
+                <div class="day-row" data-day="${d}">
+                    <div class="day-header">${d}</div>
+                    <div class="day-inputs-grid" id="grid-${d}">
+                        <div class="input-wrapper">
+                            <label>Start Time</label>
+                            <input type="time" class="start-time" onchange="calculateTimesheet()">
+                        </div>
+                        <div class="input-wrapper">
+                            <label>Break</label>
+                            <input type="text" class="break-input" placeholder="e.g. 30 mins" oninput="calculateTimesheet()">
+                        </div>
+                        <div class="input-wrapper holiday-fulltime holiday-hidden" id="holiday-wrapper-${d}">
+                            <label>Holiday</label>
+                            <select class="holiday-fulltime-select" onchange="calculateTimesheet()">
+                                <option value="">None</option>
+                                <option value="H">Holiday (H)</option>
+                                <option value="L">Lodge (L)</option>
+                            </select>
+                        </div>
+                        <div class="input-wrapper">
+                            <label>Finish Time</label>
+                            <input type="time" class="finish-time" onchange="calculateTimesheet()">
+                        </div>
+                        <div class="input-wrapper">
+                            <label>Holiday / Lodge</label>
+                            <select class="holiday-select" onchange="calculateTimesheet()">
+                                <option value="">None</option>
+                                <option value="H">Holiday (H)</option>
+                                <option value="L">Lodge (L)</option>
+                            </select>
+                        </div>
+                        <div class="input-wrapper">
+                            <label>Job Number</label>
+                            <input type="text" class="job-code-input" placeholder="e.g. 1663" oninput="calculateTimesheet()">
+                        </div>
+                        <div class="input-wrapper">
+                            <label>Expenses (£)</label>
+                            <input type="text" class="expenses" placeholder="0.00" oninput="calculateTimesheet()">
+                        </div>
+                        <div class="input-wrapper mileage-hidden" id="mileage-wrapper-${d}">
+                            <label>Mileage (mi)</label>
+                            <input type="number" class="mileage-input" placeholder="0" min="0" step="0.1" oninput="calculateTimesheet()">
+                        </div>
+                        <div class="input-wrapper" style="grid-column: span 2;">
+                            <div class="checkbox-group">
+                                <input type="checkbox" class="two-man-checkbox" onchange="calculateTimesheet()">
+                                <label>£50 2-Man Bonus</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="receipt-section" id="receipt-section-${d}">
+                        <button class="receipt-button" onclick="triggerReceiptUpload('${d}')">📸 Add Receipt</button>
+                        <div id="receipt-display-${d}"></div>
+                    </div>
+                </div>`;
+            });
+            document.getElementById("days-input-wrapper").innerHTML = daysHTML;
+
+            const dateInput = document.getElementById("input-date");
+            const today = new Date();
+            const targetSunday = new Date(today);
+            targetSunday.setDate(today.getDate() + ((7 - today.getDay()) % 7));
+            dateInput.value = targetSunday.toISOString().split('T')[0];
+
+            loadFormData();
+            calculateTimesheet();
+        });
+
+        let calculatedData = {
+            totalWorked: 0,
+            standDown: 40,
+            totalHours: 40,
+            totalExp: 0,
+            totalMileage: 0,
+            shifts: []
+        };
+
+        function triggerReceiptUpload(day) {
+            window.currentDay = day;
+            document.getElementById("receiptInput").click();
+        }
+
+        document.getElementById("receiptInput").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            const day = window.currentDay;
+            
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const receipt = {
+                    id: Date.now(),
+                    data: event.target.result,
+                    filename: file.name
+                };
+
+                dayReceipts[day].push(receipt);
+                displayReceipt(day, receipt);
+                calculateTimesheet();
+            };
+            reader.readAsDataURL(file);
+
+            e.target.value = ""; // Reset input
+        });
+
+        function displayReceipt(day, receipt) {
+            const displayContainer = document.getElementById(`receipt-display-${day}`);
+            const receiptNumber = dayReceipts[day].length;
+            
+            const receiptDiv = document.createElement("div");
+            receiptDiv.className = "receipt-thumbnail";
+            receiptDiv.id = `receipt-${receipt.id}`;
+            receiptDiv.innerHTML = `
+                <img src="${receipt.data}" alt="Receipt">
+                <div class="receipt-info">Receipt #${receiptNumber}</div>
+                <button class="remove-receipt" onclick="removeReceipt('${day}', ${receipt.id})">✕ Remove Receipt</button>
+            `;
+            displayContainer.appendChild(receiptDiv);
+        }
+
+        function removeReceipt(day, receiptId) {
+            dayReceipts[day] = dayReceipts[day].filter(r => r.id !== receiptId);
+            document.getElementById(`receipt-${receiptId}`).remove();
+            calculateTimesheet();
+        }
+
+        function switchEmploymentType() {
+            const selector = document.getElementById("employment-type");
+            currentEmploymentType = selector.value;
+
+            if (currentEmploymentType === "fulltime") {
+                document.getElementById("name-label").textContent = "Driver's Name";
+                document.getElementById("standdown-box").style.display = "block";
+                document.getElementById("total-box").style.display = "block";
+                document.getElementById("expenses-box").style.display = "none";
+                document.getElementById("mileage-box").style.display = "none";
+                document.getElementById("live-stats").classList.remove("contractor");
+                document.getElementById("live-stats").classList.add("fulltime");
+                
+                daysOfWeek.forEach(d => {
+                    const wrapper = document.getElementById(`mileage-wrapper-${d}`);
+                    if (wrapper) wrapper.classList.add("mileage-hidden");
+                    const holidayWrapper = document.getElementById(`holiday-wrapper-${d}`);
+                    if (holidayWrapper) holidayWrapper.classList.remove("holiday-hidden");
+                    const grid = document.getElementById(`grid-${d}`);
+                    if (grid) grid.classList.remove("contractor");
+                });
+            } else {
+                document.getElementById("name-label").textContent = "Contractor Name";
+                document.getElementById("standdown-box").style.display = "none";
+                document.getElementById("total-box").style.display = "none";
+                document.getElementById("expenses-box").style.display = "block";
+                document.getElementById("mileage-box").style.display = "block";
+                document.getElementById("live-stats").classList.remove("fulltime");
+                document.getElementById("live-stats").classList.add("contractor");
+                
+                daysOfWeek.forEach(d => {
+                    const wrapper = document.getElementById(`mileage-wrapper-${d}`);
+                    if (wrapper) wrapper.classList.remove("mileage-hidden");
+                    const holidayWrapper = document.getElementById(`holiday-wrapper-${d}`);
+                    if (holidayWrapper) holidayWrapper.classList.add("holiday-hidden");
+                    const grid = document.getElementById(`grid-${d}`);
+                    if (grid) grid.classList.add("contractor");
+                });
+            }
+
+            loadFormData();
+            calculateTimesheet();
+        }
+
+        function parseTimeToMinutes(timeStr) {
+            if (!timeStr) return null;
+            const parts = timeStr.split(':');
+            if (parts.length < 2) return null;
+            return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
+        }
+
+        function calculateTimesheet() {
+            let totalWorked = 0;
+            let totalExp = 0;
+            let totalMileage = 0;
+            let shifts = [];
+
+            document.querySelectorAll(".days-grid .day-row[data-day]").forEach(row => {
+                const day = row.getAttribute("data-day");
+                const start = row.querySelector(".start-time").value;
+                const finish = row.querySelector(".finish-time").value;
+                const breakText = row.querySelector(".break-input").value.trim();
+                const hol = currentEmploymentType === "fulltime" 
+                    ? row.querySelector(".holiday-fulltime-select").value 
+                    : row.querySelector(".holiday-select").value;
+                const jcNum = row.querySelector(".job-code-input").value.trim();
+                const expVal = parseFloat(row.querySelector(".expenses").value) || 0;
+                const mileageVal = parseFloat(row.querySelector(".mileage-input").value) || 0;
+                const bonus = row.querySelector(".two-man-checkbox").checked;
+
+                let hrs = 0;
+                if (hol === "H") {
+                    hrs = 8;
+                } else if (start && finish) {
+                    const startMins = parseTimeToMinutes(start);
+                    const finishMins = parseTimeToMinutes(finish);
+                    
+                    if (startMins !== null && finishMins !== null) {
+                        let diffMins = finishMins - startMins;
+                        
+                        if (diffMins <= 0) {
+                            diffMins += 1440;
+                        }
+
+                        hrs = Math.round((diffMins / 60) * 10) / 10;
+                    }
+                }
+
+                totalWorked += hrs;
+                totalExp += expVal;
+                totalMileage += mileageVal;
+
+                shifts.push({ day, start, finish, breakText, hol, jcNum, expVal, mileageVal, bonus, hrs });
+            });
+
+            if (currentEmploymentType === "fulltime") {
+                let sd = Math.max(0, 40 - totalWorked);
+                document.getElementById("stat-worked").innerText = totalWorked.toFixed(1);
+                document.getElementById("stat-standdown").innerText = sd.toFixed(1);
+                document.getElementById("stat-total").innerText = (totalWorked + sd).toFixed(1);
+
+                calculatedData = {
+                    totalWorked,
+                    standDown: sd,
+                    totalHours: totalWorked + sd,
+                    totalExp,
+                    totalMileage: 0,
+                    shifts
+                };
+            } else {
+                document.getElementById("stat-worked").innerText = totalWorked.toFixed(1);
+                document.getElementById("stat-expenses").innerText = "£" + totalExp.toFixed(2);
+                document.getElementById("stat-mileage").innerText = totalMileage.toFixed(1) + " mi";
+
+                calculatedData = {
+                    totalWorked,
+                    totalExp,
+                    totalMileage,
+                    shifts
+                };
+            }
+
+            saveFormData();
+        }
+
+        function saveAsPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const personName = document.getElementById("input-name").value;
+            const dateVal = document.getElementById("input-date").value.split("-");
+            const formattedDate = dateVal.length === 3 ? `${dateVal[2]}/${dateVal[1]}/${dateVal[0]}` : "Not Set";
+
+            const red = [211, 47, 47];
+            const darkGrey = [68, 68, 68];
+            const lightGrey = [240, 240, 240];
+
+            // Header
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(22);
+            doc.setTextColor(...red);
+            doc.text("READYPOWER", 15, 18);
+
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(...darkGrey);
+            const headerText = currentEmploymentType === "fulltime" ? "Rail Services - Driver's Summary Sheet" : "Rail Services - Contractor Timesheet";
+            doc.text(headerText, 15, 23);
+
+            doc.setFontSize(8);
+            doc.setTextColor(120, 120, 120);
+            doc.text([
+                "Readypower Rail Services LTD",
+                "Winnersh, Reading",
+                "Email: Payroll@readypower.com"
+            ], 280, 13, { align: "right" });
+
+            doc.setDrawColor(...red);
+            doc.setLineWidth(1);
+            doc.line(15, 26, 280, 26);
+
+            // Meta
+            doc.setFillColor(...lightGrey);
+            doc.rect(15, 29, 265, 12, "F");
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setTextColor(...darkGrey);
+            const nameLabel = currentEmploymentType === "fulltime" ? "DRIVER'S NAME: " : "CONTRACTOR NAME: ";
+            doc.text(nameLabel + personName, 18, 36);
+            doc.text("WEEK ENDING: " + formattedDate, 277, 36, { align: "right" });
+
+            // Table Headers
+            let y = 46;
+            doc.setFillColor(220, 220, 220);
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(0.2);
+
+            doc.setFontSize(8);
+            doc.setTextColor(0, 0, 0);
+
+            let headers, colWidths;
+            if (currentEmploymentType === "fulltime") {
+                headers = ["Day", "Start", "Breaks", "Finish", "Hol/Lodge", "Job No.", "Hrs Worked", "Exp (£)"];
+                colWidths = [24, 18, 16, 18, 20, 32, 26, 26];
+            } else {
+                headers = ["Day", "Start", "Breaks", "Finish", "Hol/Lodge", "Job No.", "Hrs Worked", "Miles", "Exp (£)"];
+                colWidths = [22, 16, 14, 16, 18, 28, 22, 18, 26];
+            }
+            
+            doc.rect(15, y, 180, 7, "F");
+            let currentX = 15;
+            headers.forEach((h, i) => {
+                doc.rect(currentX, y, colWidths[i], 7);
+                doc.text(h, currentX + colWidths[i]/2, y + 5, { align: "center" });
+                currentX += colWidths[i];
+            });
+
+            let payrollX = 200;
+            doc.setFillColor(235, 235, 235);
+            doc.rect(payrollX, y, 80, 7, "F");
+            doc.text("FOR PAYROLL ONLY", payrollX + 40, y + 5, { align: "center" });
+
+            // Table Rows
+            y += 7;
+            calculatedData.shifts.forEach((s) => {
+                doc.setFont("Helvetica", "bold");
+                doc.setTextColor(0, 0, 0);
+                doc.rect(15, y, colWidths[0], 8);
+                doc.text(s.day, 17, y + 5);
+
+                doc.setFont("Helvetica", "normal");
+                let curX = 15 + colWidths[0];
+                
+                const formattedJobNum = s.jcNum ? `TS${s.jcNum}` : "-";
+                
+                let vals;
+                if (currentEmploymentType === "fulltime") {
+                    vals = [
+                        s.start || "-", 
+                        s.breakText || "-",
+                        s.finish || "-", 
+                        s.hol || "-", 
+                        formattedJobNum, 
+                        s.hrs || "-", 
+                        s.expVal ? "£" + s.expVal.toFixed(2) : "-"
+                    ];
+                } else {
+                    vals = [
+                        s.start || "-", 
+                        s.breakText || "-",
+                        s.finish || "-", 
+                        s.hol || "-", 
+                        formattedJobNum, 
+                        s.hrs || "-", 
+                        s.mileageVal || "-",
+                        s.expVal ? "£" + s.expVal.toFixed(2) : "-"
+                    ];
+                }
+                
+                vals.forEach((v, idx) => {
+                    doc.rect(curX, y, colWidths[idx+1], 8);
+                    doc.text(v.toString(), curX + colWidths[idx+1]/2, y + 5, { align: "center" });
+                    curX += colWidths[idx+1];
+                });
+
+                doc.rect(200, y, 20, 8); doc.rect(220, y, 20, 8); doc.rect(240, y, 20, 8); doc.rect(260, y, 20, 8);
+
+                y += 8;
+            });
+
+            // Stand Down row (only for full-time)
+            if (currentEmploymentType === "fulltime") {
+                doc.setFont("Helvetica", "bolditalic");
+                doc.setTextColor(...red); 
+                doc.rect(15, y, colWidths[0], 8);
+                doc.text("Stand Down", 17, y + 5);
+                
+                let blankX = 15 + colWidths[0];
+                for (let i = 1; i < 6; i++) {
+                    doc.rect(blankX, y, colWidths[i], 8);
+                    blankX += colWidths[i];
+                }
+                doc.rect(blankX, y, colWidths[6], 8);
+                doc.text(calculatedData.standDown.toFixed(1), blankX + colWidths[6]/2, y + 5, { align: "center" });
+                
+                blankX += colWidths[6];
+                doc.rect(blankX, y, colWidths[7], 8); 
+                
+                doc.setDrawColor(200, 200, 200);
+                doc.rect(200, y, 20, 8); doc.rect(220, y, 20, 8); doc.rect(240, y, 20, 8); doc.rect(260, y, 20, 8);
+
+                y += 8;
+            }
+
+            // Totals Row
+            doc.setTextColor(0, 0, 0);
+            doc.setFillColor(235, 240, 245);
+            doc.rect(15, y, 180, 8, "F");
+            doc.rect(15, y, 180, 8);
+            doc.setFont("Helvetica", "bold");
+            doc.text("TOTALS:", 110, y + 5);
+            
+            if (currentEmploymentType === "fulltime") {
+                doc.text(calculatedData.totalHours.toFixed(1) + " Hrs", 145, y + 5);
+                doc.text("£" + calculatedData.totalExp.toFixed(2), 170, y + 5);
+            } else {
+                doc.text(calculatedData.totalWorked.toFixed(1) + " Hrs", 130, y + 5);
+                doc.text(calculatedData.totalMileage.toFixed(1) + " mi", 155, y + 5);
+                doc.text("£" + calculatedData.totalExp.toFixed(2), 175, y + 5);
+            }
+
+            y += 15;
+
+            // Footer notes and signatures
+            doc.setDrawColor(200, 200, 200);
+            doc.rect(15, y, 120, 25);
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(8);
+            doc.text("NOTES & ALLOWANCES:", 18, y + 5);
+            
+            doc.setFont("Helvetica", "normal");
+            
+            // Count 2-man bonuses
+            let bonusCount = 0;
+            calculatedData.shifts.forEach(s => {
+                if (s.bonus) {
+                    bonusCount++;
+                }
+            });
+            
+            let notesList = [];
+            if (bonusCount > 0) {
+                const bonusTotal = bonusCount * 50;
+                if (bonusCount === 1) {
+                    notesList.push("2-Man Bonus £50");
+                } else {
+                    notesList.push(`${bonusCount}x 2-Man Bonus @ £50 = £${bonusTotal}`);
+                }
+            }
+            
+            const manualNotes = document.getElementById("input-manual-notes").value.trim();
+            if (manualNotes) notesList.push(manualNotes);
+
+            doc.setFontSize(8.5);
+            doc.text(notesList.slice(0, 3).join(", "), 18, y + 12);
+
+            // Signatures
+            doc.rect(145, y, 135, 25);
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(8);
+            doc.text("MANAGER'S SIGNATURE:", 150, y + 6);
+            doc.line(150, y + 20, 200, y + 20);
+
+            doc.text("DRIVER'S SIGNATURE (Signed Digitally):", 210, y + 6);
+            doc.setFont("Courier", "bolditalic");
+            doc.setFontSize(12);
+            doc.setTextColor(26, 35, 126);
+            doc.text(personName, 210, y + 16);
+
+            // Document code data lines
+            doc.setTextColor(150, 150, 150);
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(7);
+            const docCode = currentEmploymentType === "fulltime" ? "FM-F-04 Drivers Time Sheet" : "FM-F-05 Contractor Timesheet";
+            doc.text(docCode, 15, y + 33);
+            doc.text("Issue 2", 145, y + 33, { align: "center" });
+            doc.text("October 2020", 280, y + 33, { align: "right" });
+
+            // Add Receipts Pages - one receipt per page with clear numbering
+            let hasReceipts = false;
+            for (let day in dayReceipts) {
+                if (dayReceipts[day].length > 0) {
+                    hasReceipts = true;
+                    break;
+                }
+            }
+
+            if (hasReceipts) {
+                // Collect all receipts
+                let allReceipts = [];
+                for (let day in dayReceipts) {
+                    for (let receipt of dayReceipts[day]) {
+                        allReceipts.push(receipt);
+                    }
+                }
+
+                // Add each receipt on its own page
+                allReceipts.forEach((receipt, index) => {
+                    doc.addPage();
+                    
+                    // Header with larger receipt number
+                    doc.setFont("Helvetica", "bold");
+                    doc.setFontSize(16);
+                    doc.setTextColor(...red);
+                    doc.text("Receipt Attachment", 15, 18);
+                    
+                    doc.setFont("Helvetica", "bold");
+                    doc.setFontSize(20);
+                    doc.setTextColor(...red);
+                    doc.text(`#${index + 1}`, 15, 30);
+                    
+                    doc.setFont("Helvetica", "normal");
+                    doc.setFontSize(10);
+                    doc.setTextColor(...darkGrey);
+                    doc.text(`(${index + 1} of ${allReceipts.length})`, 15, 37);
+
+                    try {
+                        // Center the receipt image on the page - scaled down for readability
+                        const imgWidth = 100;
+                        const imgHeight = 130;
+                        const pageWidth = doc.internal.pageSize.getWidth();
+                        const startX = (pageWidth - imgWidth) / 2;
+                        const startY = 50;
+
+                        doc.addImage(receipt.data, 'JPEG', startX, startY, imgWidth, imgHeight);
+                    } catch (e) {
+                        console.error("Error adding receipt image:", e);
+                        doc.setTextColor(255, 0, 0);
+                        doc.text("Error loading receipt image", 15, 100);
+                    }
+                });
+            }
+
+            const filename = currentEmploymentType === "fulltime" ? 
+                `ReadyPower_Timesheet_${personName.replace(/\s+/g, '_')}.pdf` :
+                `ReadyPower_Contractor_${personName.replace(/\s+/g, '_')}.pdf`;
+            doc.save(filename);
+        }
+
+        function saveFormData() {
+            const storageKey = currentEmploymentType === "fulltime" ? "rp_v1.8_draft" : "rp_contractor_v1.8_draft";
+            const data = {
+                name: document.getElementById("input-name").value,
+                date: document.getElementById("input-date").value,
+                manualNotes: document.getElementById("input-manual-notes").value,
+                shifts: calculatedData.shifts,
+                receipts: dayReceipts
+            };
+            localStorage.setItem(storageKey, JSON.stringify(data));
+        }
+
+        function loadFormData() {
+            const storageKey = currentEmploymentType === "fulltime" ? "rp_v1.8_draft" : "rp_contractor_v1.8_draft";
+            const raw = localStorage.getItem(storageKey);
+            if (!raw) return;
+            const data = JSON.parse(raw);
+            document.getElementById("input-name").value = data.name || (currentEmploymentType === "fulltime" ? "Ashley Fensom" : "Contractor");
+            if (data.date) document.getElementById("input-date").value = data.date;
+            if (data.manualNotes) document.getElementById("input-manual-notes").value = data.manualNotes;
+            
+            // Load receipts
+            if (data.receipts) {
+                dayReceipts = data.receipts;
+                daysOfWeek.forEach(d => {
+                    if (dayReceipts[d] && dayReceipts[d].length > 0) {
+                        dayReceipts[d].forEach(receipt => {
+                            displayReceipt(d, receipt);
+                        });
+                    }
+                });
+            }
+            
+            data.shifts.forEach(s => {
+                const row = document.querySelector(`.day-row[data-day="${s.day}"]`);
+                if (row) {
+                    row.querySelector(".start-time").value = s.start || "";
+                    row.querySelector(".finish-time").value = s.finish || "";
+                    row.querySelector(".break-input").value = s.breakText || "";
+                    if (currentEmploymentType === "fulltime") {
+                        row.querySelector(".holiday-fulltime-select").value = s.hol || "";
+                    } else {
+                        row.querySelector(".holiday-select").value = s.hol || "";
+                    }
+                    row.querySelector(".job-code-input").value = s.jcNum || "";
+                    row.querySelector(".expenses").value = s.expVal || "";
+                    row.querySelector(".mileage-input").value = s.mileageVal || "";
+                    row.querySelector(".two-man-checkbox").checked = s.bonus || false;
+                }
+            });
+        }
+
+        function clearForm() {
+            if (confirm("Clear timesheet?")) {
+                document.querySelectorAll(".start-time, .finish-time, .expenses, .job-code-input, .break-input, .mileage-input").forEach(i => i.value = "");
+                document.getElementById("input-manual-notes").value = "";
+                document.querySelectorAll("select.holiday-select, select.holiday-fulltime-select").forEach(s => s.value = "");
+                document.querySelectorAll("input[type='checkbox']").forEach(c => c.checked = false);
+                
+                // Clear receipts
+                daysOfWeek.forEach(d => {
+                    dayReceipts[d] = [];
+                    document.getElementById(`receipt-display-${d}`).innerHTML = "";
+                });
+                
+                calculateTimesheet();
+            }
+        }
+    </script>
+</body>
+</html>
