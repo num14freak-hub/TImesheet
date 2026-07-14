@@ -327,7 +327,7 @@
             display: none !important;
         }
 
-        .holiday-hidden {
+        .holiday-fulltime-hidden {
             display: none !important;
         }
     </style>
@@ -421,7 +421,7 @@
                             <label>Break</label>
                             <input type="text" class="break-input" placeholder="e.g. 30 mins" oninput="calculateTimesheet()">
                         </div>
-                        <div class="input-wrapper holiday-fulltime" id="holiday-wrapper-${d}">
+                        <div class="input-wrapper holiday-fulltime holiday-fulltime-hidden" id="holiday-fulltime-wrapper-${d}">
                             <label>Holiday</label>
                             <select class="holiday-fulltime-select" onchange="calculateTimesheet()">
                                 <option value="">None</option>
@@ -433,7 +433,7 @@
                             <label>Finish Time</label>
                             <input type="time" class="finish-time" onchange="calculateTimesheet()">
                         </div>
-                        <div class="input-wrapper holiday-select-wrapper holiday-hidden" id="contractor-holiday-wrapper-${d}">
+                        <div class="input-wrapper">
                             <label>Holiday / Lodge</label>
                             <select class="holiday-select" onchange="calculateTimesheet()">
                                 <option value="">None</option>
@@ -552,10 +552,8 @@
                 daysOfWeek.forEach(d => {
                     const wrapper = document.getElementById(`mileage-wrapper-${d}`);
                     if (wrapper) wrapper.classList.add("mileage-hidden");
-                    const holidayWrapper = document.getElementById(`holiday-wrapper-${d}`);
-                    if (holidayWrapper) holidayWrapper.classList.remove("holiday-hidden");
-                    const contractorHolidayWrapper = document.getElementById(`contractor-holiday-wrapper-${d}`);
-                    if (contractorHolidayWrapper) contractorHolidayWrapper.classList.add("holiday-hidden");
+                    const holidayFulltimeWrapper = document.getElementById(`holiday-fulltime-wrapper-${d}`);
+                    if (holidayFulltimeWrapper) holidayFulltimeWrapper.classList.remove("holiday-fulltime-hidden");
                     const grid = document.getElementById(`grid-${d}`);
                     if (grid) grid.classList.remove("contractor");
                 });
@@ -571,10 +569,8 @@
                 daysOfWeek.forEach(d => {
                     const wrapper = document.getElementById(`mileage-wrapper-${d}`);
                     if (wrapper) wrapper.classList.remove("mileage-hidden");
-                    const holidayWrapper = document.getElementById(`holiday-wrapper-${d}`);
-                    if (holidayWrapper) holidayWrapper.classList.add("holiday-hidden");
-                    const contractorHolidayWrapper = document.getElementById(`contractor-holiday-wrapper-${d}`);
-                    if (contractorHolidayWrapper) contractorHolidayWrapper.classList.remove("holiday-hidden");
+                    const holidayFulltimeWrapper = document.getElementById(`holiday-fulltime-wrapper-${d}`);
+                    if (holidayFulltimeWrapper) holidayFulltimeWrapper.classList.add("holiday-fulltime-hidden");
                     const grid = document.getElementById(`grid-${d}`);
                     if (grid) grid.classList.add("contractor");
                 });
