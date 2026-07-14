@@ -208,6 +208,14 @@
             font-weight: 600;
         }
 
+        .day-row input:disabled,
+        .day-row select:disabled {
+            background-color: #f0f0f0;
+            color: #999;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
         .checkbox-group {
             display: flex;
             align-items: center;
@@ -327,7 +335,7 @@
             display: none !important;
         }
 
-        .holiday-fulltime-hidden {
+        .holiday-hidden {
             display: none !important;
         }
     </style>
@@ -421,12 +429,11 @@
                             <label>Break</label>
                             <input type="text" class="break-input" placeholder="e.g. 30 mins" oninput="calculateTimesheet()">
                         </div>
-                        <div class="input-wrapper holiday-fulltime holiday-fulltime-hidden" id="holiday-fulltime-wrapper-${d}">
+                        <div class="input-wrapper holiday-fulltime holiday-hidden" id="holiday-wrapper-${d}">
                             <label>Holiday</label>
-                            <select class="holiday-fulltime-select" onchange="calculateTimesheet()">
+                            <select class="holiday-fulltime-select" onchange="toggleHolidayFields('${d}'); calculateTimesheet()">
                                 <option value="">None</option>
                                 <option value="H">Holiday (H)</option>
-                                <option value="L">Lodge (L)</option>
                             </select>
                         </div>
                         <div class="input-wrapper">
@@ -434,10 +441,10 @@
                             <input type="time" class="finish-time" onchange="calculateTimesheet()">
                         </div>
                         <div class="input-wrapper">
-                            <label>Holiday / Lodge</label>
-                            <select class="holiday-select" onchange="calculateTimesheet()">
+                            <label>Hotel / Lodge</label>
+                            <select class="hotel-lodge-select" onchange="calculateTimesheet()">
                                 <option value="">None</option>
-                                <option value="H">Holiday (H)</option>
+                                <option value="H">Hotel (H)</option>
                                 <option value="L">Lodge (L)</option>
                             </select>
                         </div>
@@ -486,6 +493,33 @@
             totalMileage: 0,
             shifts: []
         };
+
+        function toggleHolidayFields(day) {
+            const row = document.querySelector(`.day-row[data-day="${day}"]`);
+            const holidaySelect = row.querySelector(".holiday-fulltime-select");
+            const startTime = row.querySelector(".start-time");
+            const finishTime = row.querySelector(".finish-time");
+            const breakInput = row.querySelector(".break-input");
+            const expenses = row.querySelector(".expenses");
+
+            if (holidaySelect.value === "H") {
+                // Holiday selected - disable fields and set to 8 hours
+                startTime.disabled = true;
+                finishTime.disabled = true;
+                breakInput.disabled = true;
+                expenses.disabled = true;
+                startTime.value = "";
+                finishTime.value = "";
+                breakInput.value = "";
+                expenses.value = "";
+            } else {
+                // Holiday not selected - enable fields
+                startTime.disabled = false;
+                finishTime.disabled = false;
+                breakInput.disabled = false;
+                expenses.disabled = false;
+            }
+        }
 
         function triggerReceiptUpload(day) {
             window.currentDay = day;
@@ -552,8 +586,8 @@
                 daysOfWeek.forEach(d => {
                     const wrapper = document.getElementById(`mileage-wrapper-${d}`);
                     if (wrapper) wrapper.classList.add("mileage-hidden");
-                    const holidayFulltimeWrapper = document.getElementById(`holiday-fulltime-wrapper-${d}`);
-                    if (holidayFulltimeWrapper) holidayFulltimeWrapper.classList.remove("holiday-fulltime-hidden");
+                    const holidayWrapper = document.getElementById(`holiday-wrapper-${d}`);
+                    if (holidayWrapper) holidayWrapper.classList.remove("holiday-hidden");
                     const grid = document.getElementById(`grid-${d}`);
                     if (grid) grid.classList.remove("contractor");
                 });
@@ -569,8 +603,8 @@
                 daysOfWeek.forEach(d => {
                     const wrapper = document.getElementById(`mileage-wrapper-${d}`);
                     if (wrapper) wrapper.classList.remove("mileage-hidden");
-                    const holidayFulltimeWrapper = document.getElementById(`holiday-fulltime-wrapper-${d}`);
-                    if (holidayFulltimeWrapper) holidayFulltimeWrapper.classList.add("holiday-fulltime-hidden");
+                    const holidayWrapper = document.getElementById(`holiday-wrapper-${d}`);
+                    if (holidayWrapper) holidayWrapper.classList.add("holiday-hidden");
                     const grid = document.getElementById(`grid-${d}`);
                     if (grid) grid.classList.add("contractor");
                 });
@@ -598,16 +632,17 @@
                 const start = row.querySelector(".start-time").value;
                 const finish = row.querySelector(".finish-time").value;
                 const breakText = row.querySelector(".break-input").value.trim();
-                const hol = currentEmploymentType === "fulltime" 
+                const holiday = currentEmploymentType === "fulltime" 
                     ? row.querySelector(".holiday-fulltime-select").value 
-                    : row.querySelector(".holiday-select").value;
+                    : "";
+                const hotelLodge = row.querySelector(".hotel-lodge-select").value;
                 const jcNum = row.querySelector(".job-code-input").value.trim();
                 const expVal = parseFloat(row.querySelector(".expenses").value) || 0;
                 const mileageVal = parseFloat(row.querySelector(".mileage-input").value) || 0;
                 const bonus = row.querySelector(".two-man-checkbox").checked;
 
                 let hrs = 0;
-                if (hol === "H") {
+                if (holiday === "H") {
                     hrs = 8;
                 } else if (start && finish) {
                     const startMins = parseTimeToMinutes(start);
@@ -628,7 +663,7 @@
                 totalExp += expVal;
                 totalMileage += mileageVal;
 
-                shifts.push({ day, start, finish, breakText, hol, jcNum, expVal, mileageVal, bonus, hrs });
+                shifts.push({ day, start, finish, breakText, holiday, hotelLodge, jcNum, expVal, mileageVal, bonus, hrs });
             });
 
             if (currentEmploymentType === "fulltime") {
@@ -676,6 +711,7 @@
             const red = [211, 47, 47];
             const darkGrey = [68, 68, 68];
             const lightGrey = [240, 240, 240];
+            const green = [46, 125, 50];
 
             // Header
             doc.setFont("Helvetica", "bold");
@@ -722,10 +758,10 @@
 
             let headers, colWidths;
             if (currentEmploymentType === "fulltime") {
-                headers = ["Day", "Start", "Breaks", "Finish", "Hol/Lodge", "Job No.", "Hrs Worked", "Exp (£)"];
-                colWidths = [24, 18, 16, 18, 20, 32, 26, 26];
+                headers = ["Day", "Start", "Breaks", "Holiday", "Finish", "Hotel/Lodge", "Job No.", "Hrs Worked", "Exp (£)"];
+                colWidths = [20, 16, 14, 16, 16, 18, 28, 22, 26];
             } else {
-                headers = ["Day", "Start", "Breaks", "Finish", "Hol/Lodge", "Job No.", "Hrs Worked", "Miles", "Exp (£)"];
+                headers = ["Day", "Start", "Breaks", "Finish", "Hotel/Lodge", "Job No.", "Hrs Worked", "Miles", "Exp (£)"];
                 colWidths = [22, 16, 14, 16, 18, 28, 22, 18, 26];
             }
             
@@ -760,8 +796,9 @@
                     vals = [
                         s.start || "-", 
                         s.breakText || "-",
+                        s.holiday === "H" ? "H" : "-",
                         s.finish || "-", 
-                        s.hol || "-", 
+                        s.hotelLodge || "-", 
                         formattedJobNum, 
                         s.hrs || "-", 
                         s.expVal ? "£" + s.expVal.toFixed(2) : "-"
@@ -771,7 +808,7 @@
                         s.start || "-", 
                         s.breakText || "-",
                         s.finish || "-", 
-                        s.hol || "-", 
+                        s.hotelLodge || "-", 
                         formattedJobNum, 
                         s.hrs || "-", 
                         s.mileageVal || "-",
@@ -781,7 +818,16 @@
                 
                 vals.forEach((v, idx) => {
                     doc.rect(curX, y, colWidths[idx+1], 8);
+                    
+                    // Holiday column in green for full-time
+                    if (currentEmploymentType === "fulltime" && idx === 2 && v === "H") {
+                        doc.setTextColor(...green);
+                    } else {
+                        doc.setTextColor(0, 0, 0);
+                    }
+                    
                     doc.text(v.toString(), curX + colWidths[idx+1]/2, y + 5, { align: "center" });
+                    doc.setTextColor(0, 0, 0);
                     curX += colWidths[idx+1];
                 });
 
@@ -989,10 +1035,12 @@
                     row.querySelector(".finish-time").value = s.finish || "";
                     row.querySelector(".break-input").value = s.breakText || "";
                     if (currentEmploymentType === "fulltime") {
-                        row.querySelector(".holiday-fulltime-select").value = s.hol || "";
-                    } else {
-                        row.querySelector(".holiday-select").value = s.hol || "";
+                        row.querySelector(".holiday-fulltime-select").value = s.holiday || "";
+                        if (s.holiday === "H") {
+                            toggleHolidayFields(s.day);
+                        }
                     }
+                    row.querySelector(".hotel-lodge-select").value = s.hotelLodge || "";
                     row.querySelector(".job-code-input").value = s.jcNum || "";
                     row.querySelector(".expenses").value = s.expVal || "";
                     row.querySelector(".mileage-input").value = s.mileageVal || "";
@@ -1003,9 +1051,12 @@
 
         function clearForm() {
             if (confirm("Clear timesheet?")) {
-                document.querySelectorAll(".start-time, .finish-time, .expenses, .job-code-input, .break-input, .mileage-input").forEach(i => i.value = "");
+                document.querySelectorAll(".start-time, .finish-time, .expenses, .job-code-input, .break-input, .mileage-input").forEach(i => {
+                    i.value = "";
+                    i.disabled = false;
+                });
                 document.getElementById("input-manual-notes").value = "";
-                document.querySelectorAll("select.holiday-select, select.holiday-fulltime-select").forEach(s => s.value = "");
+                document.querySelectorAll("select.hotel-lodge-select, select.holiday-fulltime-select").forEach(s => s.value = "");
                 document.querySelectorAll("input[type='checkbox']").forEach(c => c.checked = false);
                 
                 // Clear receipts
