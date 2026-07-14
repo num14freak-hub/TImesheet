@@ -421,7 +421,7 @@
                             <label>Break</label>
                             <input type="text" class="break-input" placeholder="e.g. 30 mins" oninput="calculateTimesheet()">
                         </div>
-                        <div class="input-wrapper holiday-fulltime holiday-hidden" id="holiday-wrapper-${d}">
+                        <div class="input-wrapper holiday-fulltime" id="holiday-wrapper-${d}">
                             <label>Holiday</label>
                             <select class="holiday-fulltime-select" onchange="calculateTimesheet()">
                                 <option value="">None</option>
@@ -433,7 +433,7 @@
                             <label>Finish Time</label>
                             <input type="time" class="finish-time" onchange="calculateTimesheet()">
                         </div>
-                        <div class="input-wrapper">
+                        <div class="input-wrapper holiday-select-wrapper holiday-hidden" id="contractor-holiday-wrapper-${d}">
                             <label>Holiday / Lodge</label>
                             <select class="holiday-select" onchange="calculateTimesheet()">
                                 <option value="">None</option>
@@ -554,6 +554,8 @@
                     if (wrapper) wrapper.classList.add("mileage-hidden");
                     const holidayWrapper = document.getElementById(`holiday-wrapper-${d}`);
                     if (holidayWrapper) holidayWrapper.classList.remove("holiday-hidden");
+                    const contractorHolidayWrapper = document.getElementById(`contractor-holiday-wrapper-${d}`);
+                    if (contractorHolidayWrapper) contractorHolidayWrapper.classList.add("holiday-hidden");
                     const grid = document.getElementById(`grid-${d}`);
                     if (grid) grid.classList.remove("contractor");
                 });
@@ -571,6 +573,8 @@
                     if (wrapper) wrapper.classList.remove("mileage-hidden");
                     const holidayWrapper = document.getElementById(`holiday-wrapper-${d}`);
                     if (holidayWrapper) holidayWrapper.classList.add("holiday-hidden");
+                    const contractorHolidayWrapper = document.getElementById(`contractor-holiday-wrapper-${d}`);
+                    if (contractorHolidayWrapper) contractorHolidayWrapper.classList.remove("holiday-hidden");
                     const grid = document.getElementById(`grid-${d}`);
                     if (grid) grid.classList.add("contractor");
                 });
